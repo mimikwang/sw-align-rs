@@ -5,7 +5,7 @@ pub struct Matrix {
 }
 
 impl Matrix {
-    pub fn new(height: usize, width: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         Self {
             values: vec![0; height * width],
             width,
@@ -26,7 +26,7 @@ impl Matrix {
     }
 
     fn index(&self, row: usize, col: usize) -> usize {
-        col * self.width + row
+        row * self.width + col
     }
 }
 

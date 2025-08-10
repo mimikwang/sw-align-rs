@@ -9,17 +9,17 @@ pub struct Aligner {
 impl Aligner {
     pub fn new(seq0: Vec<u8>, seq1: Vec<u8>) -> Self {
         Self {
-            matrix: Matrix::new(seq1.len() + 1, seq0.len() + 1),
+            matrix: Matrix::new(seq0.len() + 1, seq1.len() + 1),
             seq0,
             seq1,
         }
     }
 
     pub fn build(&mut self) -> Result<(), &'static str> {
-        for i in 1..=self.seq0.len() {
-            let b0 = self.seq0.get(i - 1).ok_or("does not exist")?;
-            for j in 1..=self.seq1.len() {
-                let b1 = self.seq1.get(j - 1).ok_or("does not exist")?;
+        for j in 1..=self.seq0.len() {
+            let b0 = self.seq0.get(j - 1).ok_or("does not exist")?;
+            for i in 1..=self.seq1.len() {
+                let b1 = self.seq1.get(i - 1).ok_or("does not exist")?;
 
                 let n0 = self.matrix.get(i - 1, j - 1)? + Self::substitution(b0, b1);
 
