@@ -5,7 +5,7 @@ const MATCH: i32 = 3;
 const MISMATCH: i32 = -3;
 
 pub struct Aligner {
-    matrix: Matrix,
+    matrix: Matrix<i32>,
     seq0: Vec<u8>,
     seq1: Vec<u8>,
 }
