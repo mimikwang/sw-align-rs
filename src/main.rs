@@ -7,12 +7,13 @@ use crate::aligner::Aligner;
 
 const VALID_BASE: [char; 4] = ['A', 'G', 'C', 'T'];
 
+/// TGTTACGG GGTTGACTA
 fn main() -> Result<(), &'static str> {
     let input = read().map_err(|_| "io error")?;
     let seqs = parse(input)?;
     let mut aligner = Aligner::new(seqs.0, seqs.1);
     aligner.build()?;
-    aligner.print()?;
+    println!("{aligner}");
     Ok(())
 }
 
