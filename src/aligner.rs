@@ -95,13 +95,7 @@ impl Aligner {
             let b0 = Self::get_base(&self.seq0, ind.1 - 1)?;
             let b1 = Self::get_base(&self.seq1, ind.0 - 1)?;
 
-            Self::process_trace(
-                &trace,
-                (b0 , b1),
-                &mut aligned0,
-                &mut aligned1,
-                &mut ind,
-            )?;
+            Self::process_trace(trace, (b0, b1), &mut aligned0, &mut aligned1, &mut ind)?;
         }
         aligned0.reverse();
         aligned1.reverse();
