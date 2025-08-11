@@ -1,24 +1,30 @@
 #[derive(Debug)]
-pub struct Matrix {
-    values: Vec<i32>,
+pub struct Matrix<T>
+where
+    T: Clone + Copy + Default,
+{
+    values: Vec<T>,
     width: usize,
 }
 
-impl Matrix {
+impl<T> Matrix<T>
+where
+    T: Clone + Copy + Default,
+{
     pub fn new(width: usize, height: usize) -> Self {
         Self {
-            values: vec![0; height * width],
+            values: vec![T::default(); height * width],
             width,
         }
     }
 
-    pub fn get(&self, row: usize, col: usize) -> Result<i32, &'static str> {
+    pub fn get(&self, row: usize, col: usize) -> Result<T, &'static str> {
         let index = self.index(row, col);
         let value = self.values.get(index).ok_or("out of bounds")?;
         Ok(*value)
     }
 
-    pub fn set(&mut self, row: usize, col: usize, new: i32) -> Result<(), &'static str> {
+    pub fn set(&mut self, row: usize, col: usize, new: T) -> Result<(), &'static str> {
         let index = self.index(row, col);
         let value = self.values.get_mut(index).ok_or("out of bounds")?;
         *value = new;
@@ -30,12 +36,32 @@ impl Matrix {
     }
 }
 
-impl std::fmt::Display for Matrix {
+impl<T> Matrix<T>
+where
+    T: Clone + Copy + Default + Ord,
+{
+    pub fn max(&self) -> (usize, usize, T) {
+        let max = self
+            .values
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, val)| **val)
+            .unwrap();
+        let col = max.0 % self.width;
+        let row = max.0 / self.width;
+        (row, col, *max.1)
+    }
+}
+
+impl<T> std::fmt::Display for Matrix<T>
+where
+    T: Clone + Copy + Default + std::fmt::Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for i in 0..self.values.len() {
-            write!(f, "{:?} ", self.values.get(i).unwrap_or(&0))?;
+            write!(f, "{:?} ", self.values.get(i).unwrap_or(&T::default()))?;
             if (i + 1) % self.width == 0 {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
         }
         Ok(())
