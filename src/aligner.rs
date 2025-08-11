@@ -1,3 +1,5 @@
+use crate::Result;
+use crate::errors::{ERR_CATCH_ALL, ERR_NOT_FOUND};
 use crate::matrix::Matrix;
 
 const GAP_PENALTY: i32 = 2;
@@ -37,12 +39,12 @@ impl Aligner {
         }
     }
 
-    pub fn build(&mut self) -> Result<(), &'static str> {
+    pub fn build(&mut self) -> Result<()> {
         for j in 1..=self.seq0.len() {
-            let b0 = self.seq0.get(j - 1).ok_or("does not exist")?;
+            let b0 = self.seq0.get(j - 1).ok_or(ERR_NOT_FOUND)?;
 
             for i in 1..=self.seq1.len() {
-                let b1 = self.seq1.get(i - 1).ok_or("does not exist")?;
+                let b1 = self.seq1.get(i - 1).ok_or(ERR_NOT_FOUND)?;
 
                 let n_diag = self.matrix.get(i - 1, j - 1)? + Self::substitution(b0, b1);
                 let n_top = self.matrix.get(i - 1, j)? - GAP_PENALTY;
@@ -67,7 +69,7 @@ impl Aligner {
         Ok(())
     }
 
-    fn trace(&mut self) -> Result<(), &'static str> {
+    fn trace(&mut self) -> Result<()> {
         let (max_row, max_col, _) = self.matrix.max();
         let mut print0 = vec![];
         let mut print1 = vec![];
@@ -78,9 +80,8 @@ impl Aligner {
             if trace == Trace::Stop {
                 break;
             }
-            let b0 = self.seq0.get(col - 1).ok_or("not found")?;
-            let b1 = self.seq1.get(row - 1).ok_or("not found")?;
-            
+            let b0 = self.seq0.get(col - 1).ok_or(ERR_NOT_FOUND)?;
+            let b1 = self.seq1.get(row - 1).ok_or(ERR_NOT_FOUND)?;
 
             match trace {
                 Trace::Diag => {
@@ -88,25 +89,24 @@ impl Aligner {
                     print1.push(*b1);
                     row -= 1;
                     col -= 1;
-
-                },
+                }
                 Trace::Top => {
                     print0.push(b'-');
                     print1.push(*b1);
                     row -= 1;
-                },
+                }
                 Trace::Left => {
                     print0.push(*b0);
                     print1.push(b'-');
                     col -= 1;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         print0.reverse();
         print1.reverse();
-        self.print0 = String::from_utf8(print0).map_err(|_| "")?;
-        self.print1 = String::from_utf8(print1).map_err(|_| "")?;
+        self.print0 = String::from_utf8(print0).map_err(|_| ERR_CATCH_ALL)?;
+        self.print1 = String::from_utf8(print1).map_err(|_| ERR_CATCH_ALL)?;
         Ok(())
     }
 

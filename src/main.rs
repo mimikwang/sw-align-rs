@@ -1,14 +1,16 @@
 use std::io;
 
 mod aligner;
+mod errors;
 mod matrix;
 
 use crate::aligner::Aligner;
+use crate::errors::Result;
 
 const VALID_BASE: [char; 4] = ['A', 'G', 'C', 'T'];
 
 /// TGTTACGG GGTTGACTA
-fn main() -> Result<(), &'static str> {
+fn main() -> Result<()> {
     let input = read().map_err(|_| "io error")?;
     let seqs = parse(input)?;
     let mut aligner = Aligner::new(seqs.0, seqs.1);
@@ -24,7 +26,7 @@ fn read() -> io::Result<String> {
     Ok(input)
 }
 
-fn parse(input: String) -> Result<(Vec<u8>, Vec<u8>), &'static str> {
+fn parse(input: String) -> Result<(Vec<u8>, Vec<u8>)> {
     let seqs: Vec<&str> = input.split(" ").collect();
     if seqs.len() != 2 {
         return Err("input incorrect");
@@ -34,7 +36,7 @@ fn parse(input: String) -> Result<(Vec<u8>, Vec<u8>), &'static str> {
     Ok((seq0, seq1))
 }
 
-fn string_to_vec(seq: &str) -> Result<Vec<u8>, &'static str> {
+fn string_to_vec(seq: &str) -> Result<Vec<u8>> {
     seq.chars()
         .map(|c| {
             if VALID_BASE.contains(&c) {
@@ -42,5 +44,5 @@ fn string_to_vec(seq: &str) -> Result<Vec<u8>, &'static str> {
             }
             Err("invalid base")
         })
-        .collect::<Result<Vec<u8>, &'static str>>()
+        .collect::<Result<Vec<u8>>>()
 }

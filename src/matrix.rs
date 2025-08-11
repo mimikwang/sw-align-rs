@@ -1,3 +1,6 @@
+use crate::Result;
+use crate::errors::ERR_OUT_OF_BOUNDS;
+
 #[derive(Debug)]
 pub struct Matrix<T>
 where
@@ -18,15 +21,15 @@ where
         }
     }
 
-    pub fn get(&self, row: usize, col: usize) -> Result<T, &'static str> {
+    pub fn get(&self, row: usize, col: usize) -> Result<T> {
         let index = self.index(row, col);
-        let value = self.values.get(index).ok_or("out of bounds")?;
+        let value = self.values.get(index).ok_or(ERR_OUT_OF_BOUNDS)?;
         Ok(*value)
     }
 
-    pub fn set(&mut self, row: usize, col: usize, new: T) -> Result<(), &'static str> {
+    pub fn set(&mut self, row: usize, col: usize, new: T) -> Result<()> {
         let index = self.index(row, col);
-        let value = self.values.get_mut(index).ok_or("out of bounds")?;
+        let value = self.values.get_mut(index).ok_or(ERR_OUT_OF_BOUNDS)?;
         *value = new;
         Ok(())
     }
