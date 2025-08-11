@@ -5,8 +5,10 @@ use crate::matrix::Matrix;
 const GAP_PENALTY: i32 = 2;
 const MATCH: i32 = 3;
 const MISMATCH: i32 = -3;
+const GAP: u8 = b'-';
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+/// Back trace direction
+#[derive(Clone, Default, PartialEq)]
 enum Trace {
     #[default]
     Stop,
@@ -15,17 +17,26 @@ enum Trace {
     Diag,
 }
 
+/// Aligner aligns two DNA sequences using the Smith-Waterman algorithm
 pub struct Aligner {
+    /// The scoring matrix
     matrix: Matrix<i32>,
+    /// The traceback matrix
     traceback: Matrix<Trace>,
+
+    /// The original sequence 0
     seq0: Vec<u8>,
+    /// The original sequence 1
     seq1: Vec<u8>,
 
-    print0: String,
-    print1: String,
+    /// The aligned sequence 0
+    aligned0: String,
+    /// The aligned sequence 1
+    aligned1: String,
 }
 
 impl Aligner {
+    /// Construct a new aligner
     pub fn new(seq0: Vec<u8>, seq1: Vec<u8>) -> Self {
         let width = seq0.len() + 1;
         let height = seq1.len() + 1;
@@ -34,17 +45,18 @@ impl Aligner {
             traceback: Matrix::new(width, height),
             seq0,
             seq1,
-            print0: "".into(),
-            print1: "".into(),
+            aligned0: "".into(),
+            aligned1: "".into(),
         }
     }
 
+    /// Build the scoring matrix and run the traceback
     pub fn build(&mut self) -> Result<()> {
         for j in 1..=self.seq0.len() {
-            let b0 = self.seq0.get(j - 1).ok_or(ERR_NOT_FOUND)?;
+            let b0 = Self::get_base(&self.seq0, j - 1)?;
 
             for i in 1..=self.seq1.len() {
-                let b1 = self.seq1.get(i - 1).ok_or(ERR_NOT_FOUND)?;
+                let b1 = Self::get_base(&self.seq1, i - 1)?;
 
                 let n_diag = self.matrix.get(i - 1, j - 1)? + Self::substitution(b0, b1);
                 let n_top = self.matrix.get(i - 1, j)? - GAP_PENALTY;
@@ -69,44 +81,32 @@ impl Aligner {
         Ok(())
     }
 
+    /// Run the traceback to fill in aligned0 and aligned1
     fn trace(&mut self) -> Result<()> {
-        let (max_row, max_col, _) = self.matrix.max();
-        let mut print0 = vec![];
-        let mut print1 = vec![];
-        let mut row = max_row;
-        let mut col = max_col;
+        let max_ind = self.matrix.max_index();
+        let mut aligned0 = vec![];
+        let mut aligned1 = vec![];
+        let mut ind = max_ind;
         loop {
-            let trace = self.traceback.get(row, col)?;
-            if trace == Trace::Stop {
+            let trace = self.traceback.get(ind.0, ind.1)?;
+            if trace == &Trace::Stop {
                 break;
             }
-            let b0 = self.seq0.get(col - 1).ok_or(ERR_NOT_FOUND)?;
-            let b1 = self.seq1.get(row - 1).ok_or(ERR_NOT_FOUND)?;
+            let b0 = Self::get_base(&self.seq0, ind.1 - 1)?;
+            let b1 = Self::get_base(&self.seq1, ind.0 - 1)?;
 
-            match trace {
-                Trace::Diag => {
-                    print0.push(*b0);
-                    print1.push(*b1);
-                    row -= 1;
-                    col -= 1;
-                }
-                Trace::Top => {
-                    print0.push(b'-');
-                    print1.push(*b1);
-                    row -= 1;
-                }
-                Trace::Left => {
-                    print0.push(*b0);
-                    print1.push(b'-');
-                    col -= 1;
-                }
-                _ => {}
-            }
+            Self::process_trace(
+                &trace,
+                (b0 , b1),
+                &mut aligned0,
+                &mut aligned1,
+                &mut ind,
+            )?;
         }
-        print0.reverse();
-        print1.reverse();
-        self.print0 = String::from_utf8(print0).map_err(|_| ERR_CATCH_ALL)?;
-        self.print1 = String::from_utf8(print1).map_err(|_| ERR_CATCH_ALL)?;
+        aligned0.reverse();
+        aligned1.reverse();
+        self.aligned0 = String::from_utf8(aligned0).map_err(|_| ERR_CATCH_ALL)?;
+        self.aligned1 = String::from_utf8(aligned1).map_err(|_| ERR_CATCH_ALL)?;
         Ok(())
     }
 
@@ -116,12 +116,45 @@ impl Aligner {
         }
         MISMATCH
     }
+
+    fn get_base(seq: &[u8], ind: usize) -> Result<&u8> {
+        seq.get(ind).ok_or(ERR_NOT_FOUND)
+    }
+
+    fn process_trace(
+        trace: &Trace,
+        bases: (&u8, &u8),
+        aligned0: &mut Vec<u8>,
+        aligned1: &mut Vec<u8>,
+        ind: &mut (usize, usize),
+    ) -> Result<()> {
+        match trace {
+            Trace::Diag => {
+                aligned0.push(*bases.0);
+                aligned1.push(*bases.1);
+                ind.0 -= 1;
+                ind.1 -= 1;
+            }
+            Trace::Top => {
+                aligned0.push(GAP);
+                aligned1.push(*bases.1);
+                ind.0 -= 1;
+            }
+            Trace::Left => {
+                aligned0.push(*bases.0);
+                aligned1.push(GAP);
+                ind.1 -= 1;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
 }
 
 impl std::fmt::Display for Aligner {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        writeln!(f, "{}", self.print0)?;
-        writeln!(f, "{}", self.print1)?;
+        writeln!(f, "{}", self.aligned0)?;
+        writeln!(f, "{}", self.aligned1)?;
         Ok(())
     }
 }
