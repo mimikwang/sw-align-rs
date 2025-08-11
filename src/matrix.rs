@@ -36,6 +36,23 @@ where
     }
 }
 
+impl<T> Matrix<T>
+where
+    T: Clone + Copy + Default + Ord,
+{
+    pub fn max(&self) -> (usize, usize, T) {
+        let max = self
+            .values
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, val)| **val)
+            .unwrap();
+        let col = max.0 % self.width;
+        let row = max.0 / self.width;
+        (row, col, *max.1)
+    }
+}
+
 impl<T> std::fmt::Display for Matrix<T>
 where
     T: Clone + Copy + Default + std::fmt::Debug,
@@ -44,7 +61,7 @@ where
         for i in 0..self.values.len() {
             write!(f, "{:?} ", self.values.get(i).unwrap_or(&T::default()))?;
             if (i + 1) % self.width == 0 {
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
         }
         Ok(())
